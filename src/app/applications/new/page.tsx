@@ -4,7 +4,7 @@ import { AppShell } from "@/components/layout/app-shell";
 export default function NewApplicationPage() {
   return (
     <AppShell>
-      <ApplicationForm />
+      <ApplicationForm redirectTo="/applications/[id]" />
     </AppShell>
   );
 }
