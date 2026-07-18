@@ -98,6 +98,9 @@ export function ApplicationForm({
           raw[key] = val;
         }
       }
+      if (!raw.currency) raw.currency = "IDR";
+      if (!raw.contactName) raw.contactName = "";
+      if (!raw.contactEmail) raw.contactEmail = "";
       const parsed = applicationSchema.safeParse(raw);
       if (!parsed.success) {
         return { error: parsed.error.flatten().fieldErrors, success: false };
