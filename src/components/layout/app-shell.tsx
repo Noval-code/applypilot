@@ -3,15 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useSession, signOut } from "next-auth/react";
+import { useState } from "react";
 import {
   BarChart3,
   BriefcaseBusiness,
   CalendarClock,
   KanbanSquare,
+  LogOut,
   Moon,
   Plus,
   Settings,
   Sun,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -26,6 +30,8 @@ const navItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { data: session } = useSession();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
@@ -107,19 +113,59 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   Job application command center
                 </h1>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/kanban">
-                    <KanbanSquare className="mr-1.5 size-4" />
-                    Kanban
-                  </Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link href="/applications/new">
-                    <Plus className="mr-1.5 size-4" />
-                    New application
-                  </Link>
-                </Button>
+              <div className="relative">
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center gap-2 rounded-md border border-hairline bg-surface-card px-3 py-2 text-sm font-medium text-ink hover:bg-surface-bone transition-colors"
+                >
+                  <div className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+                    {session?.user?.name?.charAt(0)?.toUpperCase() ?? <User className="size-4" />}
+                  </div>
+                  <span className="hidden sm:inline">{session?.user?.name ?? "User"}</span>
+                </button>
+
+                {profileOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                    <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg border border-hairline bg-surface-card p-2 shadow-lg">
+                      <div className="border-b border-hairline px-3 pb-2 mb-2">
+                        <p className="text-sm font-semibold text-ink">{session?.user?.name}</p>
+                        <p className="text-xs text-charcoal">{session?.user?.email}</p>
+                      </div>
+                      <Link
+                        href="/kanban"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface-bone transition-colors"
+                      >
+                        <KanbanSquare className="size-4" />
+                        Kanban
+                      </Link>
+                      <Link
+                        href="/applications/new"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface-bone transition-colors"
+                      >
+                        <Plus className="size-4" />
+                        New application
+                      </Link>
+                      <Link
+                        href="/settings"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface-bone transition-colors"
+                      >
+                        <Settings className="size-4" />
+                        Settings
+                      </Link>
+                      <button
+                        onClick={() => { setProfileOpen(false); signOut(); }}
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                      >
+                        <LogOut className="size-4" />
+                        Sign out
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </header>

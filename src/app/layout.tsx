@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -28,7 +29,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
+          <Providers>{children}</Providers>
           <Toaster richColors closeButton position="top-center" />
         </ThemeProvider>
       </body>
