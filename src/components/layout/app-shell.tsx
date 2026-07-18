@@ -12,7 +12,6 @@ import {
   KanbanSquare,
   LogOut,
   Moon,
-  Plus,
   Settings,
   Sun,
   User,
@@ -132,22 +131,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <p className="text-sm font-semibold text-ink">{session?.user?.name}</p>
                         <p className="text-xs text-charcoal">{session?.user?.email}</p>
                       </div>
-                      <Link
-                        href="/kanban"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface-bone transition-colors"
-                      >
-                        <KanbanSquare className="size-4" />
-                        Kanban
-                      </Link>
-                      <Link
-                        href="/applications/new"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface-bone transition-colors"
-                      >
-                        <Plus className="size-4" />
-                        New application
-                      </Link>
                       <Link
                         href="/settings"
                         onClick={() => setProfileOpen(false)}
