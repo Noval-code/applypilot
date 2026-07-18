@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Save, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -83,54 +83,38 @@ export function ApplicationForm({
   redirectTo?: string;
 }) {
   const [extracting, startExtract] = useTransition();
+  const [submitting, startSubmit] = useTransition();
   const [extractError, setExtractError] = useState("");
+  const [submitError, setSubmitError] = useState("");
   const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
-  const [state, formAction, pending] = useActionState(
-    async (_prev: unknown, formData: FormData) => {
-      if (extractedSkills.length > 0) {
-        formData.append("extractedSkills", JSON.stringify(extractedSkills));
-      }
-      const raw: Record<string, any> = {};
-      for (const [key, val] of formData.entries()) {
-        if (key === "extractedSkills") {
-          try { raw[key] = JSON.parse(val as string); } catch { raw[key] = []; }
-        } else {
-          raw[key] = val;
-        }
-      }
-      if (!raw.currency) raw.currency = "IDR";
-      if (!raw.contactName) raw.contactName = "";
-      if (!raw.contactEmail) raw.contactEmail = "";
-      const parsed = applicationSchema.safeParse(raw);
-      if (!parsed.success) {
-        return { error: parsed.error.flatten().fieldErrors, success: false };
-      }
-
-      const result = mode === "create"
-        ? await createApplication(parsed.data)
-        : await updateApplication(application!.id, parsed.data);
-
-      if ("error" in result) {
-        return { error: result.error, success: false };
-      }
-
-      if (redirectTo && "id" in result) {
-        window.location.href = redirectTo.replace("[id]", result.id as string);
-      }
-
-      return { error: null, success: true };
-    },
-    { error: null, success: false },
-  );
 
   const {
     register,
+    handleSubmit,
     reset,
     formState: { errors },
   } = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: toDefaultValues(application),
   });
+
+  async function onSubmit(data: ApplicationFormValues) {
+    setSubmitError("");
+    startSubmit(async () => {
+      const result = mode === "create"
+        ? await createApplication({ ...data, extractedSkills })
+        : await updateApplication(application!.id, { ...data, extractedSkills });
+
+      if ("error" in result) {
+        setSubmitError(typeof result.error === "string" ? result.error : "Please fix the form errors");
+        return;
+      }
+
+      if (redirectTo && "id" in result) {
+        window.location.href = redirectTo.replace("[id]", result.id as string);
+      }
+    });
+  }
 
   async function handleAutoFill() {
     const jd = (document.querySelector('[name="jobDescription"]') as HTMLTextAreaElement)?.value;
@@ -168,7 +152,7 @@ export function ApplicationForm({
   }
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <Card>
         <CardHeader>
           <div>
@@ -181,7 +165,7 @@ export function ApplicationForm({
           </div>
         </CardHeader>
         <CardContent className="grid gap-5 lg:grid-cols-2">
-          <Field label="Company" error={errors.company?.message || (typeof state.error === 'object' && state.error !== null && 'company' in state.error ? (state.error as Record<string, string[]>).company?.[0] : undefined)}>
+          <Field label="Company" error={errors.company?.message}>
             <Input placeholder="Northstar Labs" {...register("company")} />
           </Field>
 
@@ -255,10 +239,6 @@ export function ApplicationForm({
           <Field label="Deadline">
             <Input type="date" {...register("deadlineAt")} />
           </Field>
-
-          <input type="hidden" {...register("currency")} />
-          <input type="hidden" {...register("contactName")} />
-          <input type="hidden" {...register("contactEmail")} />
         </CardContent>
       </Card>
 
@@ -320,20 +300,12 @@ export function ApplicationForm({
       </Card>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {state.success && (
-          <p className="text-sm font-semibold text-emerald-700">
-            {application?.company ?? "Application"} {mode === "create" ? "created" : "updated"} successfully
-          </p>
+        {submitError && (
+          <p className="text-sm font-semibold text-rose-600">{submitError}</p>
         )}
-        {state.error && typeof state.error === 'string' && (
-          <p className="text-sm font-semibold text-rose-600">{state.error}</p>
-        )}
-        {state.error && typeof state.error === 'object' && (
-          <p className="text-sm font-semibold text-rose-600">Please fix the form errors</p>
-        )}
-        <Button type="submit" className="sm:w-auto" disabled={pending}>
-          {pending ? <Loader2 className="size-4 animate-spin" /> : <Save />}
-          {pending ? "Saving..." : "Save application"}
+        <Button type="submit" className="sm:w-auto" disabled={submitting}>
+          {submitting ? <Loader2 className="size-4 animate-spin" /> : <Save />}
+          {submitting ? "Saving..." : "Save application"}
         </Button>
       </div>
     </form>
