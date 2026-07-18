@@ -119,7 +119,7 @@ export async function updateApplication(id: string, data: unknown) {
     revalidatePath("/applications");
     revalidatePath(`/applications/${id}`);
     revalidatePath("/");
-    return { success: true };
+    return { success: true, id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to update application" };
   }
