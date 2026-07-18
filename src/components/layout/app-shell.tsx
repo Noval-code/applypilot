@@ -38,14 +38,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     getSidebarStats().then(setStats);
   }, []);
 
-  const pageTitle: Record<string, string> = {
-    "/": "Dashboard",
-    "/applications": "Applications",
-    "/kanban": "Kanban Board",
-    "/settings": "Settings",
-  };
-  const currentTitle = pageTitle[pathname] ?? "";
-
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   return (
@@ -127,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {stats.applications} active {stats.applications === 1 ? "application" : "applications"}
                 </p>
                 <h1 className="font-display text-2xl font-bold tracking-tight text-ink mt-0.5">
-                  {currentTitle || "ApplyPilot"}
+                  Job application command center
                 </h1>
               </div>
               <div className="relative">
