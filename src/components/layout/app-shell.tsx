@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart3,
   BriefcaseBusiness,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getSidebarStats } from "@/lib/actions/stats";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: BarChart3 },
@@ -31,6 +32,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [stats, setStats] = useState({ applications: 0, offers: 0, reminders: 0 });
+
+  useEffect(() => {
+    getSidebarStats().then(setStats);
+  }, []);
+
+  const pageTitle: Record<string, string> = {
+    "/": "Dashboard",
+    "/applications": "Applications",
+    "/kanban": "Kanban Board",
+    "/settings": "Settings",
+  };
+  const currentTitle = pageTitle[pathname] ?? "";
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
@@ -92,7 +106,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   Today
                 </div>
                 <p className="text-xs leading-5 text-charcoal">
-                  3 reminders and 1 offer need a decision window this week.
+                  {stats.reminders > 0 || stats.offers > 0
+                    ? `${stats.reminders} ${stats.reminders === 1 ? "reminder" : "reminders"} and ${stats.offers} ${stats.offers === 1 ? "offer" : "offers"} need attention.`
+                    : stats.applications > 0
+                      ? "No pending reminders. All clear!"
+                      : "Start by adding your first application."}
                 </p>
               </div>
             </div>
@@ -106,10 +124,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-mono font-semibold uppercase tracking-wider text-charcoal">
-                  July 2026 pipeline
+                  {stats.applications} active {stats.applications === 1 ? "application" : "applications"}
                 </p>
                 <h1 className="font-display text-2xl font-bold tracking-tight text-ink mt-0.5">
-                  Job application command center
+                  {currentTitle || "ApplyPilot"}
                 </h1>
               </div>
               <div className="relative">
