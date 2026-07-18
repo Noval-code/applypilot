@@ -239,6 +239,14 @@ export function ApplicationForm({
             <Input inputMode="numeric" placeholder="24000000" {...register("salaryMax")} />
           </Field>
 
+          <Field label="Contact name">
+            <Input placeholder="Jane Doe" {...register("contactName")} />
+          </Field>
+
+          <Field label="Contact email" error={errors.contactEmail?.message}>
+            <Input type="email" placeholder="jane@company.com" {...register("contactEmail")} />
+          </Field>
+
           <Field label="Applied date">
             <Input type="date" {...register("appliedAt")} />
           </Field>
