@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Save, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -106,12 +107,18 @@ export function ApplicationForm({
         : await updateApplication(application!.id, { ...data, extractedSkills });
 
       if ("error" in result) {
-        setSubmitError(typeof result.error === "string" ? result.error : "Please fix the form errors");
+        const msg = typeof result.error === "string" ? result.error : "Please fix the form errors";
+        setSubmitError(msg);
+        toast.error(msg);
         return;
       }
 
+      toast.success(mode === "create" ? "Application created!" : "Application updated!");
+
       if (redirectTo && "id" in result) {
-        window.location.href = redirectTo.replace("[id]", result.id as string);
+        setTimeout(() => {
+          window.location.href = redirectTo.replace("[id]", result.id as string);
+        }, 1200);
       }
     });
   }
