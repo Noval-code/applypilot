@@ -23,6 +23,7 @@ export function SearchFilters() {
       } else {
         next.delete("q");
       }
+      next.delete("page");
       router.push(`/applications?${next.toString()}`);
     }, 400);
     return () => clearTimeout(timer.current);
@@ -38,6 +39,7 @@ export function SearchFilters() {
     } else {
       next.delete(key);
     }
+    next.delete("page");
     router.push(`/applications?${next.toString()}`);
   }
 

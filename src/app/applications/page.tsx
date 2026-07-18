@@ -8,14 +8,17 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ApplicationTable } from "@/components/applications/application-table";
 import { SearchFilters } from "@/components/applications/search-filters";
+import { Pagination } from "@/components/ui/pagination";
 import { Plus, ListTodo } from "lucide-react";
 import Link from "next/link";
 import type { Prisma } from "@/generated/prisma/client";
 
+const PAGE_SIZE = 10;
+
 export default async function ApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; priority?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; priority?: string; sort?: string; page?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -55,12 +58,21 @@ export default async function ApplicationsPage({
       break;
   }
 
-  const applications = await prisma.application.findMany({
-    where,
-    orderBy,
-    include: { detail: true },
-  });
+  const currentPage = Math.max(1, parseInt(sp.page ?? "1"));
+  const skip = (currentPage - 1) * PAGE_SIZE;
 
+  const [applications, totalCount] = await Promise.all([
+    prisma.application.findMany({
+      where,
+      orderBy,
+      skip,
+      take: PAGE_SIZE,
+      include: { detail: true },
+    }),
+    prisma.application.count({ where }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const mapped = applications.map(fromDb);
 
   if (applications.length === 0) {
@@ -105,6 +117,14 @@ export default async function ApplicationsPage({
       <SearchFilters />
 
       <ApplicationTable applications={mapped} />
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-charcoal/60 font-medium">
+          {totalCount} {totalCount === 1 ? "application" : "applications"}
+          {sp.q && <> matching "{sp.q}"</>}
+        </p>
+        <Pagination currentPage={currentPage} totalPages={totalPages} />
+      </div>
     </AppShell>
   );
 }
