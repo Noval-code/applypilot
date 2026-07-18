@@ -14,11 +14,23 @@ import {
 import { toggleReminder, deleteReminder } from "@/lib/actions/reminders";
 import type { Reminder } from "@/lib/application-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export function UpcomingReminders({ reminders }: { reminders: Reminder[] }) {
   const router = useRouter();
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function handleToggle(id: string) {
     setTogglingId(id);
@@ -29,8 +41,8 @@ export function UpcomingReminders({ reminders }: { reminders: Reminder[] }) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this reminder?")) return;
     setDeletingId(id);
+    setConfirmDeleteId(null);
     await deleteReminder(id);
     toast.success("Reminder deleted");
     router.refresh();
@@ -89,17 +101,38 @@ export function UpcomingReminders({ reminders }: { reminders: Reminder[] }) {
                   )}
                 </p>
               </div>
-              <button
-                onClick={() => handleDelete(reminder.id)}
-                disabled={deletingId === reminder.id}
-                className="shrink-0 self-start text-charcoal/40 hover:text-rose-500 transition-colors"
+              <AlertDialog
+                open={confirmDeleteId === reminder.id}
+                onOpenChange={(open) => setConfirmDeleteId(open ? reminder.id : null)}
               >
-                {deletingId === reminder.id ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Trash2 className="size-4" />
-                )}
-              </button>
+                <AlertDialogTrigger asChild>
+                  <button
+                    disabled={deletingId === reminder.id}
+                    className="shrink-0 self-start text-charcoal/40 hover:text-rose-500 transition-colors"
+                  >
+                    {deletingId === reminder.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-4" />
+                    )}
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete reminder</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{reminder.title}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDelete(reminder.id)} disabled={deletingId === reminder.id}>
+                      {deletingId === reminder.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                      {deletingId === reminder.id ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ))}
           {reminders.length === 0 && (

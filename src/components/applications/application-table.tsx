@@ -15,6 +15,17 @@ import {
   formatSalary,
   priorityConfig,
 } from "@/lib/application-data";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export function ApplicationTable({
   applications,
@@ -23,10 +34,11 @@ export function ApplicationTable({
 }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this application? This action cannot be undone.")) return;
     setDeletingId(id);
+    setConfirmId(null);
     const result = await deleteApplication(id);
     if ("error" in result) {
       toast.error(result.error as string);
@@ -120,18 +132,39 @@ export function ApplicationTable({
                           <ArrowUpRight />
                         </Link>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(application.id)}
-                        disabled={deletingId === application.id}
+                      <AlertDialog
+                        open={confirmId === application.id}
+                        onOpenChange={(open) => setConfirmId(open ? application.id : null)}
                       >
-                        {deletingId === application.id ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="size-4 text-rose-500" />
-                        )}
-                      </Button>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={deletingId === application.id}
+                          >
+                            {deletingId === application.id ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-4 text-rose-500" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete application</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete <strong>{application.company}</strong> application? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(application.id)} disabled={deletingId === application.id}>
+                              {deletingId === application.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                              {deletingId === application.id ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </td>
                 </tr>

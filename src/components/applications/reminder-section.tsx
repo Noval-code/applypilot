@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   BellRing,
-  Check,
   CheckCircle2,
   Circle,
   Loader2,
@@ -19,6 +18,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import type { Reminder } from "@/lib/application-data";
 
 export function ReminderSection({
@@ -36,6 +46,7 @@ export function ReminderSection({
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -64,8 +75,8 @@ export function ReminderSection({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this reminder?")) return;
     setDeletingId(id);
+    setConfirmDeleteId(null);
     await deleteReminder(id);
     toast.success("Reminder deleted");
     router.refresh();
@@ -153,17 +164,38 @@ export function ReminderSection({
                 )}
               </p>
             </div>
-            <button
-              onClick={() => handleDelete(reminder.id)}
-              disabled={deletingId === reminder.id}
-              className="shrink-0 text-charcoal/40 hover:text-rose-500 transition-colors"
+            <AlertDialog
+              open={confirmDeleteId === reminder.id}
+              onOpenChange={(open) => setConfirmDeleteId(open ? reminder.id : null)}
             >
-              {deletingId === reminder.id ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Trash2 className="size-4" />
-              )}
-            </button>
+              <AlertDialogTrigger asChild>
+                <button
+                  disabled={deletingId === reminder.id}
+                  className="shrink-0 text-charcoal/40 hover:text-rose-500 transition-colors"
+                >
+                  {deletingId === reminder.id ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete reminder</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{reminder.title}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDelete(reminder.id)} disabled={deletingId === reminder.id}>
+                    {deletingId === reminder.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {deletingId === reminder.id ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         ))}
       </CardContent>
