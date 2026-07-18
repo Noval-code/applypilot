@@ -252,6 +252,10 @@ export function ApplicationForm({
           <Field label="Deadline">
             <Input type="date" {...register("deadlineAt")} />
           </Field>
+
+          <input type="hidden" {...register("currency")} />
+          <input type="hidden" {...register("contactName")} />
+          <input type="hidden" {...register("contactEmail")} />
         </CardContent>
       </Card>
 
@@ -320,6 +324,9 @@ export function ApplicationForm({
         )}
         {state.error && typeof state.error === 'string' && (
           <p className="text-sm font-semibold text-rose-600">{state.error}</p>
+        )}
+        {state.error && typeof state.error === 'object' && (
+          <p className="text-sm font-semibold text-rose-600">Please fix the form errors</p>
         )}
         <Button type="submit" className="sm:w-auto" disabled={pending}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : <Save />}
