@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: hsl(221.2 83.2% 53.3%);
   --color-primary-deep: hsl(221.2 83.2% 45%);
@@ -26,6 +28,21 @@
 
   --radius-md: 8px;
   --radius-lg: 12px;
+}
+
+@variant dark {
+  --color-primary: hsl(221.2 83.2% 60%);
+  --color-ink: hsl(210 40% 98%);
+  --color-body: hsl(215 20% 75%);
+  --color-charcoal: hsl(215 16% 55%);
+  --color-muted: hsl(217.2 32.6% 17.5%);
+  --color-accent: hsl(217.2 32.6% 17.5%);
+  --color-accent-foreground: hsl(210 40% 98%);
+  --color-canvas: hsl(222.2 84% 2%);
+  --color-surface-bone: hsl(217.2 32.6% 10%);
+  --color-surface-card: hsl(222.2 84% 4.9%);
+  --color-hairline: hsl(217.2 32.6% 17.5%);
+  --color-hairline-strong: hsl(215 20% 65%);
 }
 
 body {

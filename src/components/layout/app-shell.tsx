@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   BarChart3,
   BriefcaseBusiness,
   CalendarClock,
   KanbanSquare,
+  Moon,
   Plus,
   Settings,
+  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,12 +25,15 @@ const navItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   return (
-    <div className="min-h-screen bg-canvas text-ink font-sans">
+    <div className="min-h-screen bg-canvas text-ink font-sans transition-colors">
       <div className="mx-auto grid min-h-screen w-full max-w-[1600px] lg:grid-cols-[240px_1fr]">
         {/* Sidebar */}
-        <aside className="border-r border-hairline bg-surface-card">
+        <aside className="border-r border-hairline bg-surface-card transition-colors">
           <div className="flex h-full flex-col gap-6 p-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3">
@@ -64,15 +70,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
 
-            {/* Today Widget */}
-            <div className="mt-auto rounded-md border border-hairline bg-surface-bone/50 p-3">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
-                <CalendarClock className="size-4 text-primary" />
-                Today
+            {/* Theme toggle + Today Widget */}
+            <div className="mt-auto space-y-3">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex w-full items-center gap-3 rounded-md border border-hairline px-3 py-2 text-xs font-semibold text-charcoal hover:bg-surface-bone transition-colors"
+              >
+                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                {theme === "dark" ? "Light mode" : "Dark mode"}
+              </button>
+
+              <div className="rounded-md border border-hairline bg-surface-bone/50 p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
+                  <CalendarClock className="size-4 text-primary" />
+                  Today
+                </div>
+                <p className="text-xs leading-5 text-charcoal">
+                  3 reminders and 1 offer need a decision window this week.
+                </p>
               </div>
-              <p className="text-xs leading-5 text-charcoal">
-                3 reminders and 1 offer need a decision window this week.
-              </p>
             </div>
           </div>
         </aside>
@@ -80,7 +97,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Main Content Area */}
         <main className="min-w-0 flex flex-col">
           {/* Header */}
-          <header className="sticky top-0 z-10 border-b border-hairline bg-canvas/80 px-6 py-4 backdrop-blur">
+          <header className="sticky top-0 z-10 border-b border-hairline bg-canvas/80 px-6 py-4 backdrop-blur transition-colors">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-mono font-semibold uppercase tracking-wider text-charcoal">
