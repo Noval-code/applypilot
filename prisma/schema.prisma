@@ -35,6 +35,7 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
+  skills        String[]
 
   accounts      Account[]
   sessions      Session[]
@@ -85,35 +86,48 @@ model VerificationToken {
 }
 
 model Application {
-  id          String              @id @default(cuid())
-  userId      String
-  company     String
-  position    String
-  status      ApplicationStatus   @default(WISHLIST)
-  priority    ApplicationPriority @default(MEDIUM)
-  jobUrl      String?
-  source      String?
-  location    String?
-  workType    WorkType?
-  salaryMin   Int?
-  salaryMax   Int?
-  currency    String              @default("IDR")
-  contactName String?
-  contactEmail String?
-  appliedAt   DateTime?
-  deadlineAt  DateTime?
-  description String?
-  notes       String?
-  order       Int                 @default(0)
+  id         String              @id @default(cuid())
+  userId     String
+  company    String
+  position   String
+  status     ApplicationStatus   @default(WISHLIST)
+  priority   ApplicationPriority @default(MEDIUM)
+  appliedAt  DateTime?
+  deadlineAt DateTime?
+  order      Int                 @default(0)
 
-  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reminders   Reminder[]
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reminders  Reminder[]
+  detail     ApplicationDetail?
 
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
 
   @@index([userId, status])
   @@index([userId, deadlineAt])
+}
+
+model ApplicationDetail {
+  id              String    @id @default(cuid())
+  applicationId   String    @unique
+  jobUrl          String?
+  source          String?
+  location        String?
+  workType        WorkType?
+  salaryMin       Int?
+  salaryMax       Int?
+  currency        String    @default("IDR")
+  contactName     String?
+  contactEmail    String?
+  description     String?
+  notes           String?
+  jobDescription  String?
+  extractedSkills String[]
+
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model Reminder {

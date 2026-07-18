@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +43,7 @@ const baseValues: ApplicationFormValues = {
   deadlineAt: "",
   description: "",
   notes: "",
+  jobDescription: "",
 };
 
 function toDefaultValues(application?: Application): ApplicationFormValues {
@@ -68,6 +69,7 @@ function toDefaultValues(application?: Application): ApplicationFormValues {
     deadlineAt: application.deadlineAt ?? "",
     description: application.description ?? "",
     notes: application.notes ?? "",
+    jobDescription: application.jobDescription ?? "",
   };
 }
 
@@ -80,11 +82,21 @@ export function ApplicationForm({
   mode?: "create" | "edit";
   redirectTo?: string;
 }) {
+  const [extracting, startExtract] = useTransition();
+  const [extractError, setExtractError] = useState("");
+  const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
   const [state, formAction, pending] = useActionState(
     async (_prev: unknown, formData: FormData) => {
-      const raw: Record<string, FormDataEntryValue> = {};
+      if (extractedSkills.length > 0) {
+        formData.append("extractedSkills", JSON.stringify(extractedSkills));
+      }
+      const raw: Record<string, any> = {};
       for (const [key, val] of formData.entries()) {
-        raw[key] = val;
+        if (key === "extractedSkills") {
+          try { raw[key] = JSON.parse(val as string); } catch { raw[key] = []; }
+        } else {
+          raw[key] = val;
+        }
       }
       const parsed = applicationSchema.safeParse(raw);
       if (!parsed.success) {
@@ -110,11 +122,47 @@ export function ApplicationForm({
 
   const {
     register,
+    reset,
     formState: { errors },
   } = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: toDefaultValues(application),
   });
+
+  async function handleAutoFill() {
+    const jd = (document.querySelector('[name="jobDescription"]') as HTMLTextAreaElement)?.value;
+    if (!jd || jd.length < 20) {
+      setExtractError("Paste job description first (min 20 chars)");
+      return;
+    }
+    setExtractError("");
+    startExtract(async () => {
+      try {
+        const res = await fetch("/api/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobDescription: jd }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error ?? "Extraction failed");
+        }
+        const data = await res.json();
+        setExtractedSkills(data.skills ?? []);
+        reset({
+          ...baseValues,
+          jobDescription: jd,
+          company: data.company || "",
+          position: data.position || "",
+          workType: data.workType || "REMOTE",
+          salaryMin: data.salaryMin ? String(data.salaryMin) : "",
+          salaryMax: data.salaryMax ? String(data.salaryMax) : "",
+        });
+      } catch (e: any) {
+        setExtractError(e.message ?? "Failed to extract");
+      }
+    });
+  }
 
   return (
     <form action={formAction} className="space-y-5">
@@ -204,6 +252,43 @@ export function ApplicationForm({
           <Field label="Deadline">
             <Input type="date" {...register("deadlineAt")} />
           </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-display text-lg font-bold text-ink">Job description</CardTitle>
+              <p className="mt-1 text-sm text-charcoal font-medium">
+                Paste the job posting — AI will auto-fill fields.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAutoFill}
+              disabled={extracting}
+            >
+              {extracting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
+              {extracting ? "Extracting..." : "Auto-fill"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            placeholder="Paste full job description here..."
+            className="min-h-[140px]"
+            {...register("jobDescription")}
+          />
+          {extractError && (
+            <p className="mt-2 text-sm font-medium text-rose-600">{extractError}</p>
+          )}
         </CardContent>
       </Card>
 

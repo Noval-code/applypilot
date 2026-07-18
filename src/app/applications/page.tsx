@@ -19,6 +19,7 @@ export default async function ApplicationsPage() {
   const applications = await prisma.application.findMany({
     where: { userId: session.user.id },
     orderBy: { updatedAt: "desc" },
+    include: { detail: true },
   });
 
   const mapped = applications.map(fromDb);

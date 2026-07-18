@@ -2,6 +2,8 @@ import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { fromDb, formatSalary } from "@/lib/application-data";
+import { MatchScore } from "@/components/applications/match-score";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, ExternalLink, Mail, MapPin } from "lucide-react";
 import { StatusBadge } from "@/components/applications/status-badge";
@@ -20,26 +22,22 @@ export default async function ApplicationDetailPage({
   }
 
   const { id } = await params;
-  const application = await prisma.application.findUnique({ where: { id } });
+  const [application, user] = await Promise.all([
+    prisma.application.findUnique({
+      where: { id },
+      include: { detail: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { skills: true },
+    }),
+  ]);
 
   if (!application || application.userId !== session.user.id) {
     notFound();
   }
 
-  const formatSalary = () => {
-    if (!application.salaryMin && !application.salaryMax) {
-      return "Not listed";
-    }
-    const fmt = new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: application.currency,
-      maximumFractionDigits: 0,
-    });
-    if (application.salaryMin && application.salaryMax) {
-      return `${fmt.format(application.salaryMin)} - ${fmt.format(application.salaryMax)}`;
-    }
-    return fmt.format(application.salaryMin ?? application.salaryMax ?? 0);
-  };
+  const d = application.detail;
 
   return (
     <AppShell>
@@ -68,8 +66,8 @@ export default async function ApplicationDetailPage({
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
-              <DetailItem label="Salary" value={formatSalary()} />
-              <DetailItem label="Source" value={application.source ?? "Not listed"} />
+              <DetailItem label="Salary" value={formatSalary(fromDb(application))} />
+              <DetailItem label="Source" value={d?.source ?? "Not listed"} />
               <DetailItem
                 label="Applied"
                 value={application.appliedAt?.toISOString().split("T")[0] ?? "Not set"}
@@ -83,20 +81,24 @@ export default async function ApplicationDetailPage({
             <div>
               <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-charcoal">Description</h3>
               <p className="mt-2 leading-7 text-body">
-                {application.description ?? "No description saved."}
+                {d?.description ?? "No description saved."}
               </p>
             </div>
 
             <div>
               <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-charcoal">Notes</h3>
               <p className="mt-2 leading-7 text-body">
-                {application.notes ?? "No private notes saved."}
+                {d?.notes ?? "No private notes saved."}
               </p>
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-5">
+          {d?.extractedSkills && d.extractedSkills.length > 0 && user && (
+            <MatchScore userSkills={user.skills} jobSkills={d.extractedSkills} />
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="font-display text-lg font-bold text-ink">Contact</CardTitle>
@@ -104,15 +106,15 @@ export default async function ApplicationDetailPage({
             <CardContent className="space-y-3 text-sm text-charcoal">
               <p className="flex items-center gap-2">
                 <MapPin className="size-4 text-charcoal/50" />
-                {application.location ?? "No location"}
+                {d?.location ?? "No location"}
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="size-4 text-charcoal/50" />
-                {application.contactEmail ?? "No email"}
+                {d?.contactEmail ?? "No email"}
               </p>
               <p className="flex items-center gap-2">
                 <CalendarDays className="size-4 text-charcoal/50" />
-                {application.workType ?? "No work type"}
+                {d?.workType ?? "No work type"}
               </p>
             </CardContent>
           </Card>
@@ -122,9 +124,9 @@ export default async function ApplicationDetailPage({
               <CardTitle className="font-display text-lg font-bold text-ink">Job link</CardTitle>
             </CardHeader>
             <CardContent>
-              {application.jobUrl ? (
+              {d?.jobUrl ? (
                 <Button asChild variant="outline" className="w-full">
-                  <a href={application.jobUrl} target="_blank" rel="noreferrer">
+                  <a href={d.jobUrl} target="_blank" rel="noreferrer">
                     Open job post
                     <ExternalLink />
                   </a>

@@ -28,19 +28,21 @@ export type Application = {
   position: string;
   status: ApplicationStatus;
   priority: ApplicationPriority;
+  workType: WorkType;
   jobUrl?: string;
   source?: string;
   location?: string;
-  workType?: WorkType;
+  contactName?: string;
+  contactEmail?: string;
   salaryMin?: number;
   salaryMax?: number;
   currency: string;
-  contactName?: string;
-  contactEmail?: string;
   appliedAt?: string;
   deadlineAt?: string;
   description?: string;
   notes?: string;
+  jobDescription?: string;
+  extractedSkills?: string[];
 };
 
 export type Reminder = {
@@ -350,44 +352,51 @@ export function fromDbReminder(
   };
 }
 
-/** Convert a Prisma Application row to the UI Application type */
+/** Convert a Prisma Application row (with optional detail join) to the UI Application type */
 export function fromDb(app: {
   id: string;
   company: string;
   position: string;
   status: string;
   priority: string;
-  workType: string | null;
-  jobUrl: string | null;
-  source: string | null;
-  location: string | null;
-  contactName: string | null;
-  contactEmail: string | null;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  currency: string;
-  description: string | null;
-  notes: string | null;
   appliedAt: Date | null;
   deadlineAt: Date | null;
+  detail?: {
+    jobUrl: string | null;
+    source: string | null;
+    location: string | null;
+    workType: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    currency: string;
+    contactName: string | null;
+    contactEmail: string | null;
+    description: string | null;
+    notes: string | null;
+    jobDescription: string | null;
+    extractedSkills: string[];
+  } | null;
 }): Application {
+  const d = app.detail;
   return {
     id: app.id,
     company: app.company,
     position: app.position,
     status: app.status as ApplicationStatus,
     priority: app.priority as ApplicationPriority,
-    workType: (app.workType ?? "ONSITE") as WorkType,
-    jobUrl: app.jobUrl ?? undefined,
-    source: app.source ?? undefined,
-    location: app.location ?? undefined,
-    contactName: app.contactName ?? undefined,
-    contactEmail: app.contactEmail ?? undefined,
-    salaryMin: app.salaryMin ?? undefined,
-    salaryMax: app.salaryMax ?? undefined,
-    currency: app.currency,
-    description: app.description ?? undefined,
-    notes: app.notes ?? undefined,
+    workType: (d?.workType ?? "ONSITE") as WorkType,
+    jobUrl: d?.jobUrl ?? undefined,
+    source: d?.source ?? undefined,
+    location: d?.location ?? undefined,
+    contactName: d?.contactName ?? undefined,
+    contactEmail: d?.contactEmail ?? undefined,
+    salaryMin: d?.salaryMin ?? undefined,
+    salaryMax: d?.salaryMax ?? undefined,
+    currency: d?.currency ?? "IDR",
+    description: d?.description ?? undefined,
+    notes: d?.notes ?? undefined,
+    jobDescription: d?.jobDescription ?? undefined,
+    extractedSkills: d?.extractedSkills ?? undefined,
     appliedAt: app.appliedAt?.toISOString().split("T")[0] ?? undefined,
     deadlineAt: app.deadlineAt?.toISOString().split("T")[0] ?? undefined,
   };

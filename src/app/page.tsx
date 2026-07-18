@@ -15,6 +15,7 @@ export default async function Home() {
   const applications = await prisma.application.findMany({
     where: { userId: session.user.id },
     orderBy: { updatedAt: "desc" },
+    include: { detail: true },
   });
 
   const reminders = await prisma.reminder.findMany({

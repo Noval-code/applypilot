@@ -17,25 +17,31 @@ export async function createApplication(data: unknown) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const { salaryMin, salaryMax, appliedAt, deadlineAt, jobUrl, source, location, workType, contactName, contactEmail, description, notes, ...rest } = parsed.data;
+  const { salaryMin, salaryMax, appliedAt, deadlineAt, jobUrl, source, location, workType, contactName, contactEmail, description, notes, jobDescription, extractedSkills, ...rest } = parsed.data;
 
   try {
     const application = await prisma.application.create({
       data: {
         ...rest,
         userId: session.user.id,
-        jobUrl: jobUrl || null,
-        source: source || null,
-        location: location || null,
-        workType: workType || null,
-        salaryMin: salaryMin ? parseInt(salaryMin) : null,
-        salaryMax: salaryMax ? parseInt(salaryMax) : null,
-        contactName: contactName || null,
-        contactEmail: contactEmail || null,
         appliedAt: appliedAt ? new Date(appliedAt) : null,
         deadlineAt: deadlineAt ? new Date(deadlineAt) : null,
-        description: description || null,
-        notes: notes || null,
+        detail: {
+          create: {
+            jobUrl: jobUrl || null,
+            source: source || null,
+            location: location || null,
+            workType: (workType as any) || null,
+            salaryMin: salaryMin ? parseInt(salaryMin) : null,
+            salaryMax: salaryMax ? parseInt(salaryMax) : null,
+            contactName: contactName || null,
+            contactEmail: contactEmail || null,
+            description: description || null,
+            notes: notes || null,
+            jobDescription: jobDescription || null,
+            extractedSkills: extractedSkills ?? [],
+          },
+        },
       },
     });
 
@@ -63,25 +69,47 @@ export async function updateApplication(id: string, data: unknown) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const { salaryMin, salaryMax, appliedAt, deadlineAt, jobUrl, source, location, workType, contactName, contactEmail, description, notes, ...rest } = parsed.data;
+  const { salaryMin, salaryMax, appliedAt, deadlineAt, jobUrl, source, location, workType, contactName, contactEmail, description, notes, jobDescription, extractedSkills, ...rest } = parsed.data;
 
   try {
     await prisma.application.update({
       where: { id },
       data: {
         ...rest,
-        jobUrl: jobUrl || null,
-        source: source || null,
-        location: location || null,
-        workType: workType || null,
-        salaryMin: salaryMin ? parseInt(salaryMin) : null,
-        salaryMax: salaryMax ? parseInt(salaryMax) : null,
-        contactName: contactName || null,
-        contactEmail: contactEmail || null,
         appliedAt: appliedAt ? new Date(appliedAt) : null,
         deadlineAt: deadlineAt ? new Date(deadlineAt) : null,
-        description: description || null,
-        notes: notes || null,
+        detail: {
+          upsert: {
+            create: {
+              jobUrl: jobUrl || null,
+              source: source || null,
+              location: location || null,
+              workType: (workType as any) || null,
+              salaryMin: salaryMin ? parseInt(salaryMin) : null,
+              salaryMax: salaryMax ? parseInt(salaryMax) : null,
+              contactName: contactName || null,
+              contactEmail: contactEmail || null,
+              description: description || null,
+              notes: notes || null,
+              jobDescription: jobDescription || null,
+              extractedSkills: extractedSkills ?? [],
+            },
+            update: {
+              jobUrl: jobUrl || null,
+              source: source || null,
+              location: location || null,
+              workType: (workType as any) || null,
+              salaryMin: salaryMin ? parseInt(salaryMin) : null,
+              salaryMax: salaryMax ? parseInt(salaryMax) : null,
+              contactName: contactName || null,
+              contactEmail: contactEmail || null,
+              description: description || null,
+              notes: notes || null,
+              jobDescription: jobDescription || null,
+              extractedSkills: extractedSkills ?? [],
+            },
+          },
+        },
       },
     });
 

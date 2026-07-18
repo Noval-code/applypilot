@@ -17,7 +17,10 @@ export default async function EditApplicationPage({
   }
 
   const { id } = await params;
-  const application = await prisma.application.findUnique({ where: { id } });
+  const application = await prisma.application.findUnique({
+    where: { id },
+    include: { detail: true },
+  });
 
   if (!application || application.userId !== session.user.id) {
     notFound();

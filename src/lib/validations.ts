@@ -25,6 +25,8 @@ export const applicationSchema = z.object({
   deadlineAt: z.string().optional(),
   description: z.string().optional(),
   notes: z.string().optional(),
+  jobDescription: z.string().optional(),
+  extractedSkills: z.array(z.string()).optional(),
 });
 
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
