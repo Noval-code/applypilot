@@ -1,9 +1,15 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowUpRight, CalendarDays, Loader2, MapPin, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/applications/status-badge";
 import { Badge } from "@/components/ui/badge";
+import { deleteApplication } from "@/lib/actions/applications";
 import {
   type Application,
   formatSalary,
@@ -15,6 +21,22 @@ export function ApplicationTable({
 }: {
   applications: Application[];
 }) {
+  const router = useRouter();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this application? This action cannot be undone.")) return;
+    setDeletingId(id);
+    const result = await deleteApplication(id);
+    if ("error" in result) {
+      toast.error(result.error as string);
+    } else {
+      toast.success("Application deleted");
+      router.refresh();
+    }
+    setDeletingId(null);
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -91,12 +113,26 @@ export function ApplicationTable({
                     {formatSalary(application)}
                   </td>
                   <td className="py-4">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href={`/applications/${application.id}`}>
-                        View
-                        <ArrowUpRight />
-                      </Link>
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/applications/${application.id}`}>
+                          View
+                          <ArrowUpRight />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(application.id)}
+                        disabled={deletingId === application.id}
+                      >
+                        {deletingId === application.id ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="size-4 text-rose-500" />
+                        )}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

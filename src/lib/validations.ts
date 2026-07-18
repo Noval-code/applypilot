@@ -41,3 +41,9 @@ export const loginSchema = z.object({
   email: z.string().email("Use a valid email"),
   password: z.string().min(1, "Password is required"),
 });
+
+export const reminderSchema = z.object({
+  title: z.string().min(2, "Title is required"),
+  remindAt: z.string().min(1, "Date & time is required"),
+  applicationId: z.string().optional(),
+});

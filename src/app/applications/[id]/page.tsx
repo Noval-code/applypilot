@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { fromDb, formatSalary } from "@/lib/application-data";
 import { MatchScore } from "@/components/applications/match-score";
+import { DeleteApplicationButton } from "@/components/applications/delete-application-button";
+import { ReminderSection } from "@/components/applications/reminder-section";
+import { fromDbReminder } from "@/lib/application-data";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, ExternalLink, Mail, MapPin } from "lucide-react";
 import { StatusBadge } from "@/components/applications/status-badge";
@@ -22,7 +25,7 @@ export default async function ApplicationDetailPage({
   }
 
   const { id } = await params;
-  const [application, user] = await Promise.all([
+  const [application, user, reminders] = await Promise.all([
     prisma.application.findUnique({
       where: { id },
       include: { detail: true },
@@ -30,6 +33,10 @@ export default async function ApplicationDetailPage({
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { skills: true },
+    }),
+    prisma.reminder.findMany({
+      where: { userId: session.user.id, applicationId: id },
+      orderBy: { remindAt: "asc" },
     }),
   ]);
 
@@ -48,9 +55,12 @@ export default async function ApplicationDetailPage({
             Back
           </Link>
         </Button>
-        <Button asChild>
-          <Link href={`/applications/${application.id}/edit`}>Edit application</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href={`/applications/${application.id}/edit`}>Edit application</Link>
+          </Button>
+          <DeleteApplicationButton id={application.id} />
+        </div>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -136,6 +146,11 @@ export default async function ApplicationDetailPage({
               )}
             </CardContent>
           </Card>
+
+          <ReminderSection
+            applicationId={application.id}
+            initialReminders={reminders.map(fromDbReminder)}
+          />
         </div>
       </div>
     </AppShell>
