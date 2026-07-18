@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { reminderSchema } from "@/lib/validations";
+import { logTimeline } from "@/lib/timeline";
 
 export async function createReminder(data: unknown) {
   const session = await getServerSession(authOptions);
@@ -25,6 +26,15 @@ export async function createReminder(data: unknown) {
       },
     });
 
+    if (applicationId) {
+      await logTimeline({
+        applicationId,
+        userId: session.user.id,
+        eventType: "REMINDER_CREATED",
+        description: `Reminder: ${title}`,
+      });
+    }
+
     revalidatePath("/");
     revalidatePath("/applications/[id]");
     return { success: true, id: reminder.id };
@@ -41,10 +51,19 @@ export async function toggleReminder(id: string) {
     const reminder = await prisma.reminder.findUnique({ where: { id } });
     if (!reminder || reminder.userId !== session.user.id) return { error: "Not found" };
 
-    await prisma.reminder.update({
+    const updated = await prisma.reminder.update({
       where: { id },
       data: { isCompleted: !reminder.isCompleted },
     });
+
+    if (updated.applicationId) {
+      await logTimeline({
+        applicationId: updated.applicationId,
+        userId: session.user.id,
+        eventType: updated.isCompleted ? "REMINDER_COMPLETED" : "REMINDER_CREATED",
+        description: updated.isCompleted ? `Completed reminder: ${updated.title}` : `Reopened reminder: ${updated.title}`,
+      });
+    }
 
     revalidatePath("/");
     revalidatePath("/applications/[id]");

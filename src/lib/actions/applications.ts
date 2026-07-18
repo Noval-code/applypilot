@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applicationSchema } from "@/lib/validations";
+import { logTimeline } from "@/lib/timeline";
 
 export async function createApplication(data: unknown) {
   const session = await getServerSession(authOptions);
@@ -44,6 +45,13 @@ export async function createApplication(data: unknown) {
           },
         },
       },
+    });
+
+    await logTimeline({
+      applicationId: application.id,
+      userId: session.user.id,
+      eventType: "APPLICATION_CREATED",
+      description: `Created ${rest.company} — ${rest.position}`,
     });
 
     revalidatePath("/applications");
@@ -116,6 +124,13 @@ export async function updateApplication(id: string, data: unknown) {
       },
     });
 
+    await logTimeline({
+      applicationId: id,
+      userId: session.user.id,
+      eventType: "APPLICATION_UPDATED",
+      description: `Updated ${rest.company} — ${rest.position}`,
+    });
+
     revalidatePath("/applications");
     revalidatePath(`/applications/${id}`);
     revalidatePath("/");
@@ -146,6 +161,16 @@ export async function updateApplicationStatus(id: string, status: string) {
       where: { id },
       data: { status: status as any },
     });
+
+    await logTimeline({
+      applicationId: id,
+      userId: session.user.id,
+      eventType: "STATUS_CHANGE",
+      fromStatus: existing.status,
+      toStatus: status,
+      description: `Moved from ${existing.status} to ${status}`,
+    });
+
     revalidatePath("/kanban");
     revalidatePath("/applications");
     revalidatePath("/");
@@ -167,7 +192,16 @@ export async function deleteApplication(id: string) {
   }
 
   try {
+    const app = await prisma.application.findUnique({ where: { id }, select: { company: true, position: true } });
     await prisma.application.delete({ where: { id } });
+
+    await logTimeline({
+      applicationId: id,
+      userId: session.user.id,
+      eventType: "APPLICATION_DELETED",
+      description: app ? `Deleted ${app.company} — ${app.position}` : "Deleted application",
+    });
+
     revalidatePath("/applications");
     revalidatePath("/");
     return { success: true };

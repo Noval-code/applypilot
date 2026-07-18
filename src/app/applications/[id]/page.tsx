@@ -6,6 +6,7 @@ import { fromDb, formatSalary } from "@/lib/application-data";
 import { MatchScore } from "@/components/applications/match-score";
 import { DeleteApplicationButton } from "@/components/applications/delete-application-button";
 import { ReminderSection } from "@/components/applications/reminder-section";
+import { ActivityTimeline } from "@/components/applications/activity-timeline";
 import { fromDbReminder } from "@/lib/application-data";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, ExternalLink, Mail, MapPin } from "lucide-react";
@@ -25,7 +26,7 @@ export default async function ApplicationDetailPage({
   }
 
   const { id } = await params;
-  const [application, user, reminders] = await Promise.all([
+  const [application, user, reminders, timelineEvents] = await Promise.all([
     prisma.application.findUnique({
       where: { id },
       include: { detail: true },
@@ -37,6 +38,10 @@ export default async function ApplicationDetailPage({
     prisma.reminder.findMany({
       where: { userId: session.user.id, applicationId: id },
       orderBy: { remindAt: "asc" },
+    }),
+    prisma.applicationTimeline.findMany({
+      where: { applicationId: id },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
@@ -150,6 +155,17 @@ export default async function ApplicationDetailPage({
           <ReminderSection
             applicationId={application.id}
             initialReminders={reminders.map(fromDbReminder)}
+          />
+
+          <ActivityTimeline
+            events={timelineEvents.map((e) => ({
+              id: e.id,
+              eventType: e.eventType,
+              fromStatus: e.fromStatus ?? undefined,
+              toStatus: e.toStatus ?? undefined,
+              description: e.description ?? undefined,
+              createdAt: e.createdAt.toISOString(),
+            }))}
           />
         </div>
       </div>

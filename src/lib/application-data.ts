@@ -45,6 +45,15 @@ export type Application = {
   extractedSkills?: string[];
 };
 
+export type ApplicationTimelineEvent = {
+  id: string;
+  eventType: string;
+  fromStatus?: string;
+  toStatus?: string;
+  description?: string;
+  createdAt: string;
+};
+
 export type Reminder = {
   id: string;
   title: string;

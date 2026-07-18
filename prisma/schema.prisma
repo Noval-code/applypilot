@@ -41,6 +41,7 @@ model User {
   sessions      Session[]
   applications  Application[]
   reminders     Reminder[]
+  timeline      ApplicationTimeline[]
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -99,6 +100,7 @@ model Application {
   user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   reminders  Reminder[]
   detail     ApplicationDetail?
+  timeline   ApplicationTimeline[]
 
   createdAt  DateTime            @default(now())
   updatedAt  DateTime            @updatedAt
@@ -128,6 +130,24 @@ model ApplicationDetail {
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+}
+
+model ApplicationTimeline {
+  id            String           @id @default(cuid())
+  applicationId String
+  userId        String
+  eventType     String
+  fromStatus    String?
+  toStatus      String?
+  description   String?
+
+  application   Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime         @default(now())
+
+  @@index([applicationId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model Reminder {
