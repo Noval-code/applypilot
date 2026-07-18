@@ -17,7 +17,7 @@ export async function createApplication(data: unknown) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const { salaryMin, salaryMax, appliedAt, deadlineAt, jobUrl, source, location, workType, contactName, contactEmail, description, notes, jobDescription, extractedSkills, ...rest } = parsed.data;
+  const { salaryMin, salaryMax, appliedAt, deadlineAt, jobUrl, source, location, workType, contactName, contactEmail, description, notes, jobDescription, extractedSkills, currency, ...rest } = parsed.data;
 
   try {
     const application = await prisma.application.create({
@@ -28,6 +28,7 @@ export async function createApplication(data: unknown) {
         deadlineAt: deadlineAt ? new Date(deadlineAt) : null,
         detail: {
           create: {
+            currency,
             jobUrl: jobUrl || null,
             source: source || null,
             location: location || null,
@@ -48,8 +49,8 @@ export async function createApplication(data: unknown) {
     revalidatePath("/applications");
     revalidatePath("/");
     return { success: true, id: application.id };
-  } catch {
-    return { error: "Failed to create application" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to create application" };
   }
 }
 
@@ -69,7 +70,7 @@ export async function updateApplication(id: string, data: unknown) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const { salaryMin, salaryMax, appliedAt, deadlineAt, jobUrl, source, location, workType, contactName, contactEmail, description, notes, jobDescription, extractedSkills, ...rest } = parsed.data;
+  const { salaryMin, salaryMax, appliedAt, deadlineAt, jobUrl, source, location, workType, contactName, contactEmail, description, notes, jobDescription, extractedSkills, currency, ...rest } = parsed.data;
 
   try {
     await prisma.application.update({
@@ -81,6 +82,7 @@ export async function updateApplication(id: string, data: unknown) {
         detail: {
           upsert: {
             create: {
+              currency,
               jobUrl: jobUrl || null,
               source: source || null,
               location: location || null,
@@ -95,6 +97,7 @@ export async function updateApplication(id: string, data: unknown) {
               extractedSkills: extractedSkills ?? [],
             },
             update: {
+              currency,
               jobUrl: jobUrl || null,
               source: source || null,
               location: location || null,
@@ -117,8 +120,8 @@ export async function updateApplication(id: string, data: unknown) {
     revalidatePath(`/applications/${id}`);
     revalidatePath("/");
     return { success: true };
-  } catch {
-    return { error: "Failed to update application" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to update application" };
   }
 }
 
